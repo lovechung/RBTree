@@ -83,15 +83,15 @@ public class RbTree<T extends Comparable<T>> {
         node.setRed(true);
         setParent(node, null);
 
-        // 如果root为空，则直接成为root节点
+        // 如果根节点为空，则<insert节点>直接成为根节点
         if (getRoot() == null) {
             root.setLeft(node);
-            // 根一定是黑的
             node.setRed(false);
         } else {
+            // 获取对应的<父节点>
             RbTreeNode<T> x = findParent(node);
             int cmp = x.getValue().compareTo(node.getValue());
-            // 覆盖开启，值相等，则覆盖并结束本方法
+            // 覆盖开启且值相等，则覆盖并返回
             if (this.overrideMode && cmp == 0) {
                 T v = x.getValue();
                 x.setValue(node.getValue());
@@ -100,15 +100,14 @@ public class RbTree<T extends Comparable<T>> {
                 // 覆盖不开启，值相等则忽略该节点
                 return x.getValue();
             }
-            // 值不相等，则认x为爸爸
+            // 值不相等，则<insert节点>与<父节点>互相链接
             setParent(node, x);
-            // 然后认儿子，一个认爸爸，一个认儿子，看来是个双向链表
             if (cmp > 0) {
                 x.setLeft(node);
             } else {
                 x.setRight(node);
             }
-            // 然后开始调整红黑树
+            // 开始调整红黑树
             fixInsert(node);
         }
         size.incrementAndGet();
@@ -120,29 +119,29 @@ public class RbTree<T extends Comparable<T>> {
      */
     private void fixInsert(RbTreeNode<T> x) {
         RbTreeNode<T> parent = x.getParent();
-        // 只有在父节点为红色节点的时候是需要插入修复操作的
+        // 只有在<父节点>为红色的时候需要修复
         while (parent != null && parent.isRed()) {
             RbTreeNode<T> uncle = getUncle(x);
-            // 符合case1，叔叔存在且为红色
+            // case1，<叔叔节点>存在且为红色
             if (uncle != null && uncle.isRed()) {
-                // 将叔叔和爸爸均变黑，爷爷变红
+                // 将<叔叔节点>和<父节点>均变黑，<祖父节点>变红
                 parent.setRed(false);
                 uncle.setRed(false);
                 parent.getParent().setRed(true);
-                // 变色后需要检查爷爷与祖爷爷是否满足规则（可能存在双红），继续向上回溯
+                // 变色后需要检查<祖父节点>与<曾祖父节点>是否满足规则（可能存在双红，则继续向上回溯）
                 x = parent.getParent();
                 parent = x.getParent();
             } else {
                 RbTreeNode<T> ancestor = parent.getParent();
-                // 三子同侧分镜像两种情况
+                // <父节点>在<祖父节点>左边
                 if (parent == ancestor.getLeft()) {
-                    // 判断该节点是否在父节点左边
+                    // 判断<insert节点>是否在<父节点>左边
                     boolean isRight = x == parent.getRight();
-                    // 不是则符合case3，先父节点左旋再形成三子同侧
+                    // 如果不是，则符合case3，需要<父节点>左旋形成case2
                     if (isRight) {
                         rotateLeft(parent);
                     }
-                    // 是则符合case2，直接三子同侧
+                    // 此时符合case2（<insert节点><父节点><祖父节点>三子同侧），<祖父节点>右旋
                     rotateRight(ancestor);
                     /*
                      * 旋转完成后进行变色
@@ -156,10 +155,11 @@ public class RbTree<T extends Comparable<T>> {
                     } else {
                         parent.setRed(false);
                     }
-                    // 不管是case2或case3，最后爷爷都要变成红色
+                    // 不管是case2或case3，最后<祖父节点>都要变成红色
                     ancestor.setRed(true);
-                } else {
-                    // 镜像结构，与之相反即可
+                }
+                // <父节点>在<祖父节点>右边（镜像情况）
+                else {
                     boolean isLeft = x == parent.getLeft();
                     if (isLeft) {
                         rotateRight(parent);
@@ -191,7 +191,7 @@ public class RbTree<T extends Comparable<T>> {
         RbTreeNode<T> parent = root;
 
         while (dataRoot != null) {
-            // 从根节点开始查找value值（此处巧妙在于，dataRoot始终与parent保持子父关系）
+            // 从根节点开始查找value值（此处巧妙在于，dataRoot与parent交互赋值，始终保持子父关系）
             int cmp = dataRoot.getValue().compareTo(value);
             if (cmp < 0) {
                 parent = dataRoot;
@@ -200,7 +200,7 @@ public class RbTree<T extends Comparable<T>> {
                 parent = dataRoot;
                 dataRoot = dataRoot.getLeft();
             }
-            // 如果value值相等，则定位到delete节点
+            // 如果value值相等，则定位到<delete节点>
             else {
                 /*
                  * delete节点有三种情况：2个子节点、1个子节点、没有子节点
@@ -215,19 +215,19 @@ public class RbTree<T extends Comparable<T>> {
                  */
                 // 第一类：有右节点
                 if (dataRoot.getRight() != null) {
-                    // 获取后继节点（即要顶替delete节点）
+                    // 获取<后继节点>（即要顶替<delete节点>）
                     RbTreeNode<T> min = removeMin(dataRoot);
-                    // 此处需要修复的节点，要么为父节点，要么为右节点
+                    // 此处需要修复的节点，要么为<父节点>，要么为<右子节点>
                     RbTreeNode<T> x = min.getRight() == null ? min.getParent() : min.getRight();
                     boolean isParent = min.getRight() == null;
                     // 带删除的节点颜色
                     boolean curMinIsBlack = min.isBlack();
 
-                    // -------开始重组min节点（即取代dataRoot）-------
-                    // 重组左节点
+                    // -------开始重组后继节点（取代dataRoot）-------
+                    // 重组<左节点>
                     min.setLeft(dataRoot.getLeft());
                     setParent(dataRoot.getLeft(), min);
-                    // 重组父节点
+                    // 重组<父节点>
                     if (parent.getLeft() == dataRoot) {
                         // 如果dataRoot为根节点，则min升级为根节点
                         parent.setLeft(min);
@@ -235,41 +235,41 @@ public class RbTree<T extends Comparable<T>> {
                         parent.setRight(min);
                     }
                     setParent(min, parent);
-                    // 重组右节点
+                    // 重组<右节点>
                     if (min != dataRoot.getRight()) {
                         min.setRight(dataRoot.getRight());
                         setParent(dataRoot.getRight(), min);
                     }
                     // 继承颜色
                     min.setRed(dataRoot.isRed());
-                    // ---------------重组min节点结束---------------
+                    // ---------------重组后继节点结束---------------
 
-                    // 如果后继节点的颜色为黑色，则需要修复
+                    // 如果<后继节点>的颜色为黑色，则需要修复
                     if (curMinIsBlack) {
                         if (min != dataRoot.getRight()) {
-                            // 后继节点 与 delete节点 不是父子关系
+                            // <后继节点>与<delete节点>不是父子关系
                             fixRemove(x, isParent);
                         } else if (min.getRight() != null) {
-                            // 后继节点 与 delete节点 是父子关系，且后继节点有右节点
+                            // <后继节点>与<delete节点>是父子关系，且<后继节点>有<右子节点>
                             fixRemove(min.getRight(), false);
                         } else {
-                            // 后继节点 与 delete节点 是父子关系，且后继节点只有左节点
+                            // <后继节点>与<delete节点>是父子关系，且<后继节点>只有<左子节点>
                             fixRemove(min, true);
                         }
                     }
                 }
                 // 第二类：只有左节点或没有节点（叶子节点）
                 else {
-                    // 将 delete节点的左节点 与 delete节点的父节点 互相链接（包含叶子节点）
+                    // 将<delete节点>的<左子节点>与<delete节点>的<父节点>互相链接（包含叶子节点）
                     setParent(dataRoot.getLeft(), parent);
                     if (parent.getLeft() == dataRoot) {
                         parent.setLeft(dataRoot.getLeft());
                     } else {
                         parent.setRight(dataRoot.getLeft());
                     }
-                    // 如果delete节点是黑色（包含叶子节点）并且树不为空，则需要修复。
+                    // 如果<delete节点>是黑色（包含叶子节点）并且树不为空，则需要修复。
                     if (dataRoot.isBlack() && getRoot() != null) {
-                        // 此处需要修复的节点，要么为父节点，要么为左节点
+                        // 此处需要修复的节点，要么为<父节点>，要么为<左子节点>
                         RbTreeNode<T> x = dataRoot.getLeft() == null ? parent : dataRoot.getLeft();
                         boolean isParent = dataRoot.getLeft() == null;
                         fixRemove(x, isParent);
@@ -303,79 +303,79 @@ public class RbTree<T extends Comparable<T>> {
         //（局部）当前节点的父节点
         RbTreeNode<T> parent = isParent ? node : node.getParent();
 
-        // 当前节点为黑色，且不为根节点（向上回溯，直至根节点）
+        // <当前节点>为黑色，且不为根节点（向上回溯，直至根节点）
         while (!isRed && !isRoot(cur)) {
-            // 获取当前节点的兄弟节点
+            // 获取<当前节点>的<兄弟节点>
             RbTreeNode<T> sibling = getSibling(cur, parent);
-            // 判断当前节点是否在左边
+            // 判断<当前节点>是否在左边
             boolean isLeft = parent.getRight() == sibling;
 
             /*
-             * case1：兄弟节点为红色（此时根据规则3，侄子节点必均为黑，通过旋转，从侄子节点借调黑节点）
+             * case1：<兄弟节点>为红色（此时根据规则3，<侄子节点>必均为黑，通过旋转，从<侄子节点>借调黑节点）
              */
             if (sibling.isRed() && isLeft) {
-                // 当前节点在左边，父节点变红，兄弟节点变黑，父节点左旋
+                // <当前节点>在左边，<父节点>变红，<兄弟节点>变黑，<父节点>左旋
                 parent.makeRed();
                 sibling.makeBlack();
                 rotateLeft(parent);
             } else if (sibling.isRed() && !isLeft) {
-                // 当前节点在右边，父节点变红，兄弟节点变黑，parent右旋
+                // <当前节点>在右边，<父节点>变红，<兄弟节点>变黑，<父节点>右旋
                 parent.makeRed();
                 sibling.makeBlack();
                 rotateRight(parent);
             }
             /*
-             * case2：兄弟节点为黑色，且侄子节点都为黑色（此时不能从兄弟或侄子节点借调，否则违反规则4）
+             * case2：<兄弟节点>为黑色，且<侄子节点>都为黑色（此时不能从<兄弟节点>或<侄子节点>借调，否则违反规则4）
              */
             else if (isBlack(sibling.getLeft()) && isBlack(sibling.getRight())) {
-                // 兄弟节点变红
+                // <兄弟节点>变红
                 sibling.makeRed();
-                // 父节点转为当前节点
+                // <父节点>转为<当前节点>
                 cur = parent;
-                // 当前节点颜色作为循环开关
+                // <当前节点>的颜色作为循环开关
                 isRed = cur.isRed();
-                // 爷爷节点转为父节点，向上回溯
+                // <祖父节点>转为<父节点>，向上回溯
                 parent = parent.getParent();
             }
             /*
-             * case3：兄弟节点为黑色，且侄子节点为"左红右黑"（需要将红节点借调到父、兄、侄三点同侧，从而转换为case4）
+             * case3：<兄弟节点>为黑色，且<侄子节点>为"左红右黑"（需要将红节点借调到父、兄、侄三点同侧，从而转换为case4）
              */
             else if (isLeft && !isBlack(sibling.getLeft()) && isBlack(sibling.getRight())) {
-                // 当前节点在左边，侄子节点为"左红右黑"，兄弟节点变红，左侄子节点变黑，兄弟节点右旋
+                // <当前节点>在左边，<侄子节点>为"左红右黑"，<兄弟节点>变红，<左侄子节点>变黑，<兄弟节点>右旋
                 sibling.makeRed();
                 sibling.getLeft().makeBlack();
                 rotateRight(sibling);
             } else if (!isLeft && isBlack(sibling.getLeft()) && !isBlack(sibling.getRight())) {
-                // 当前节点在右边，侄子节点为"左黑右红"，兄弟节点变红，右侄子节点变黑，兄弟节点左旋（镜像情况）
+                // <当前节点>在右边，<侄子节点>为"左黑右红"，<兄弟节点>变红，<右侄子节点>变黑，<兄弟节点>左旋（镜像情况）
                 sibling.makeRed();
                 sibling.getRight().makeBlack();
                 rotateLeft(sibling);
             }
             /*
-             * case4：兄弟节点为黑色，且右侄子节点为红色
-             * （不需要关心左侄子节点，只要父、兄、侄三点同侧即可，因为需要借调兄<黑>、右侄<红>）
+             * case4：<兄弟节点>为黑色，且<右侄子节点>为红色
+             * （不需要关心<左侄子节点>，只要父、兄、侄三点同侧即可，因为需要借调<兄弟节点>-黑、<右侄子节点>-红）
              */
             else if (isLeft && !isBlack(sibling.getRight())) {
-                // 兄弟节点继承父节点的颜色，父节点变黑，右侄子节点变黑
+                // <兄弟节点>继承<父节点>的颜色，<父节点>变黑，<右侄子节点>变黑
                 sibling.setRed(parent.isRed());
                 parent.makeBlack();
                 sibling.getRight().makeBlack();
-                // 父节点左旋，则修复完成
+                // <父节点>左旋，则修复完成
                 rotateLeft(parent);
                 // 循环结束
                 cur = getRoot();
             } else if (!isLeft && !isBlack(sibling.getLeft())) {
-                // 兄弟节点继承父节点的颜色，父节点变黑，左侄子节点变黑
+                // <兄弟节点>继承<父节点>的颜色，<父节点>变黑，<左侄子节点>变黑
                 sibling.setRed(parent.isRed());
                 parent.makeBlack();
                 sibling.getLeft().makeBlack();
-                // 父节点左旋，则修复完成
+                // <父节点>左旋，则修复完成
                 rotateRight(parent);
                 // 循环结束
                 cur = getRoot();
             }
         }
-        // 如果当前节点为红色，则将其变黑
+        // 如果<当前节点>为红色，则将其变黑
         if (isRed) {
             cur.makeBlack();
         }
@@ -469,7 +469,7 @@ public class RbTree<T extends Comparable<T>> {
             return nodeRight;
         }
         // 此时nodeRight即为后继节点（已经没有左节点了，只可能有右节点）
-        // 返回之前先将 后继节点的右节点 与 父节点 互相链接
+        // 返回之前先将<后继节点>的<右节点>与<父节点>互相链接
         parent.setLeft(nodeRight.getRight());
         setParent(nodeRight.getRight(), parent);
 
