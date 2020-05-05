@@ -10,13 +10,13 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
-    <artifactId>demo</artifactId>
+    <artifactId>RBTree</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>demo</name>
+    <name>RBTree</name>
     <description>Demo for Red-Black Tree</description>
 
     <properties>
-        <java.version>14</java.version>
+        <java.version>8</java.version>
     </properties>
 
     <dependencies></dependencies>

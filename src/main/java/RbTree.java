@@ -589,8 +589,9 @@ public class RbTree<T extends Comparable<T>> {
     }
 
     public static void main(String[] args) {
-        RbTree<Integer> bst = new RbTree<>();
-        Integer[] array = {12, 1, 9, 2, 0, 11, 7, 19, 4, 15, 18, 5, 14, 13, 10, 16, 6, 3, 8, 17};
+        RbTree<Integer> bst = new RbTree<Integer>();
+        Integer[] array = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+//        Integer[] array = {12, 1, 9, 2, 0, 11, 7, 19, 4, 15, 18, 5, 14, 13, 10, 16, 6, 3, 8, 17};
         for (Integer i : array) {
             bst.addNode(i);
         }
@@ -600,7 +601,7 @@ public class RbTree<T extends Comparable<T>> {
 
         // 删除
         System.out.println("==============删除后的红黑树==============");
-        bst.remove(12);
+        bst.remove(8);
         bst.printRbTree(bst.getRoot());
     }
 }
